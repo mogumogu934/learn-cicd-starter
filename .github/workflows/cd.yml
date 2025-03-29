@@ -16,28 +16,39 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23.0"
+          go-version: "1.24.1"
 
       - name: Make script file executable
         run: chmod +x ./scripts/buildprod.sh
 
       - name: Build app
         run: ./scripts/buildprod.sh
+        
 
       - name: Clear potential cached credentials
         run: |
           rm -rf ~/.config/gcloud
           rm -rf ~/.kube
       
-      - name: Authenticate to Google Cloud (with debug)
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-          cleanup_credentials: true
-          
-      - name: Verify authenticated account
+          - name: Clean slate
+          run: |
+            rm -rf ~/.config/gcloud
+            rm -rf ~/.kube
+            
+      - name: Setup auth explicitly
         run: |
+            echo '${{ secrets.GCP_CREDENTIALS }}' > /tmp/sa-key.json
+            gcloud auth activate-service-account --key-file=/tmp/sa-key.json
+            gcloud auth list
+            
+      - name: Set project explicitly
+        run: gcloud config set project notely-455203
+          
+      - name: Debug auth
+        run: |
+          echo "Current gcloud auth configuration:"
           gcloud auth list
+          echo "Current account:"
           gcloud config list account --format "value(core.account)"
   
       - name: Set up Cloud SDK
