@@ -23,6 +23,11 @@ jobs:
 
       - name: Build app
         run: ./scripts/buildprod.sh
+        
+
+      - name: Clear potential cached credentials
+        run: |
+            rm -rf ~/.kube
             
       - name: Setup auth explicitly
         run: |
