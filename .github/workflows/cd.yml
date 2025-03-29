@@ -9,6 +9,9 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -18,18 +21,19 @@ jobs:
         with:
           go-version: "1.24.1"
 
-      - name: Make script file executable
-        run: chmod +x ./scripts/buildprod.sh
+      - name: Install goose
+        run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
       - name: Build app
-        run: ./scripts/buildprod.sh
-        
+        run: |
+            chmod +x ./scripts/buildprod.sh
+            ./scripts/buildprod.sh
 
       - name: Clear potential cached credentials
         run: |
             rm -rf ~/.kube
             
-      - name: Setup auth explicitly
+      - name: Set up auth explicitly
         run: |
             echo '${{ secrets.GCP_CREDENTIALS }}' > /tmp/sa-key.json
             gcloud auth activate-service-account --key-file=/tmp/sa-key.json
@@ -37,24 +41,19 @@ jobs:
             
       - name: Set project explicitly
         run: gcloud config set project notely-455203
-          
-      - name: Debug auth
-        run: |
-          echo "Current gcloud auth configuration:"
-          gcloud auth list
-          echo "Current account:"
-          gcloud config list account --format "value(core.account)"
   
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           version: '>= 363.0.0'
-  
-      - name: Use gcloud CLI
-        run: gcloud info
 
       - name: Build Docker image and push to Google Artifact Registry
         run: gcloud builds submit --tag us-central1-docker.pkg.dev/notely-455203/notely-ar-repo/notely:latest .
+
+      - name: Run db migrations
+        run: |
+          chmod +x ./scripts/migrateup.sh
+          ./scripts/migrateup.sh
 
       - name: Deploy to Cloud Run
         run: gcloud run deploy notely --image us-central1-docker.pkg.dev/notely-455203/notely-ar-repo/notely:latest --region us-central1 --allow-unauthenticated --project notely-455203 --max-instances=4
