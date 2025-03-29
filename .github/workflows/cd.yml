@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Clear previous cache
+        run: |
+          rm -rf /tmp/*
+          rm -rf ~/.cache/
+        continue-on-error: true
+
       - name: Check out code
         uses: actions/checkout@v4
 
@@ -38,4 +44,7 @@ jobs:
         run: gcloud info
 
       - name: Build Docker image and push to Google Artifact Registry
-        run: gcloud builds submit --tag us-central1-docker.pkg.dev/notely-455203/notely-ar-repo/notely:latest .
+        run: |
+          cd $GITHUB_WORKSPACE
+          gcloud builds submit --tag us-central1-docker.pkg.dev/notely-455203/notely-ar-repo/notely:latest .
+        
