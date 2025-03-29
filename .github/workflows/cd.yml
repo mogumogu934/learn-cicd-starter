@@ -23,17 +23,6 @@ jobs:
 
       - name: Build app
         run: ./scripts/buildprod.sh
-        
-
-      - name: Clear potential cached credentials
-        run: |
-          rm -rf ~/.config/gcloud
-          rm -rf ~/.kube
-      
-          - name: Clean slate
-          run: |
-            rm -rf ~/.config/gcloud
-            rm -rf ~/.kube
             
       - name: Setup auth explicitly
         run: |
